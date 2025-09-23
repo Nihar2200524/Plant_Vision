@@ -97,16 +97,22 @@ const PlantCard = ({ plant }: PlantCardProps) => {
                 {plant.watering} watering
               </Badge>
             )}
-            {plant.sunlight?.[0] && (
+            {Array.isArray(plant.sunlight) && plant.sunlight[0] && (
               <Badge variant="outline" className={`flex items-center gap-1 ${getSunlightColor(plant.sunlight[0])}`}>
                 <Sun className="h-3 w-3" />
                 {plant.sunlight[0]}
               </Badge>
             )}
+            {typeof plant.sunlight === 'string' && (
+              <Badge variant="outline" className={`flex items-center gap-1 ${getSunlightColor(plant.sunlight)}`}>
+                <Sun className="h-3 w-3" />
+                {plant.sunlight}
+              </Badge>
+            )}
           </div>
 
           {/* Collapsible Extra Details */}
-          {(plant.other_name?.length > 0 || plant.sunlight?.length > 1) && (
+          {(plant.other_name?.length > 0 || (Array.isArray(plant.sunlight) && plant.sunlight.length > 1)) && (
             <Collapsible open={isOpen} onOpenChange={setIsOpen}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-0 h-auto">
@@ -124,7 +130,7 @@ const PlantCard = ({ plant }: PlantCardProps) => {
                     </p>
                   </div>
                 )}
-                {plant.sunlight && plant.sunlight.length > 1 && (
+                {Array.isArray(plant.sunlight) && plant.sunlight.length > 1 && (
                   <div>
                     <h4 className="text-sm font-medium text-foreground mb-2">All sunlight requirements:</h4>
                     <div className="flex flex-wrap gap-1">
