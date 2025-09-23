@@ -1,6 +1,6 @@
 // Perenual Plant API integration
 const API_BASE_URL = 'https://perenual.com/api';
-const API_KEY = 'sk-be9A68d29bf9957ed12531'; // Your Perenual API key
+const API_KEY = 'YOUR_PERENUAL_API_KEY'; // Replace with your actual API key
 
 export interface PlantApiResponse {
   data: PlantData[];
