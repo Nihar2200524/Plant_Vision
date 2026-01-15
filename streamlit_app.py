@@ -89,41 +89,186 @@ def identify_plant_with_groq(image_bytes):
         st.error(f"Vision API Error: {e}")
         return None
 
-# Custom CSS
+# Custom CSS with "WOW" Design System
 st.markdown("""
     <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+        --primary: #15803d; /* Green 700 */
+        --primary-light: #dcfce7; /* Green 100 */
+        --secondary: #f0fdf4; /* Green 50 */
+        --accent: #22c55e; /* Green 500 */
+        --background: #f8fafc; /* Slate 50 */
+        --text-dark: #0f172a; /* Slate 900 */
+        --text-muted: #64748b; /* Slate 500 */
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --gradient-hero: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+        --gradient-card: linear-gradient(145deg, #ffffff, #f0fdf4);
+    }
+
+    /* Global Typography */
+    html, body, [class*="css"] {
+        font-family: 'Outfit', sans-serif;
+    }
+    
+    /* App Background */
+    .stApp {
+        background-color: var(--background);
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.1) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.1) 0px, transparent 50%);
+    }
+
+    /* Custom Header */
+    .main-header {
+        text-align: center; 
+        padding: 4rem 0 2rem 0;
+        background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        margin-bottom: 0.5rem;
+    }
+    
+    .sub-header {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        font-weight: 400;
+        margin-bottom: 3rem;
+    }
+
+    /* Plant Cards */
     .plant-card {
-        background-color: #f0fdf4;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
-        border: 1px solid #bbf7d0;
-        height: 100%;
-        transition: transform 0.2s;
-    }
-    .plant-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .stButton>button {
-        background-color: #4ade80;
-        color: white;
+        background: white;
         border-radius: 20px;
-        padding: 0.5rem 2rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .plant-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+    
+    .plant-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: var(--hover-shadow);
+    }
+    
+    .plant-card img {
+        border-radius: 12px;
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        margin-bottom: 1rem;
+        transition: transform 0.5s ease;
+    }
+    
+    .plant-card:hover img {
+        transform: scale(1.05);
+    }
+    
+    .plant-card h3 {
+        color: var(--text-dark);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 1.25rem;
+    }
+    
+    .plant-card .scientific {
+        color: var(--primary);
+        font-style: italic;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .plant-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+    }
+    
+    .plant-info span.icon {
+        background: var(--primary-light);
+        color: var(--primary);
+        padding: 4px;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    /* Streamlit Components Styling */
+    .stTextInput > div > div > input {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 1rem;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    
+    .stTextInput > div > div > input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+    }
+    
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
         border: none;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        transition: all 0.3s;
         width: 100%;
     }
-    .stButton>button:hover {
-        background-color: #22c55e;
-        border-color: #22c55e;
-        color: white;
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.4);
+    }
+    
+    /* Input/Camera Container styles */
+    .upload-container {
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
+    div[data-testid="stExpander"] {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: var(--card-shadow);
     }
     </style>
 """, unsafe_allow_html=True)
 
 # Main Header
-st.title("🌱 PlantVision")
-st.markdown("<h3 style='color: #666;'>Discover the Nature Around You</h3>", unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🌱 PlantVision</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Discover the beauty of nature with AI-powered identification</p>', unsafe_allow_html=True)
 
 # Tabs for different modes
 tab1, tab2 = st.tabs(["🔍 Search by Name", "📸 Identify by Image"])
@@ -154,11 +299,17 @@ with tab1:
                     with st.container():
                         st.markdown(f"""
                         <div class="plant-card">
-                            <img src="{image_url}" style="width:100%; border-radius:10px; height:200px; object-fit:cover; margin-bottom:10px;">
+                            <img src="{image_url}" loading="lazy">
                             <h3>{plant.get("common_name", "Unknown")}</h3>
-                            <p><i>{plant.get("scientific_name", [""])[0]}</i></p>
-                            <p>💧 {plant.get("watering", "Unknown")}</p>
-                            <p>☀️ {', '.join(plant.get("sunlight", []))}</p>
+                            <span class="scientific">{plant.get("scientific_name", [""])[0]}</span>
+                            <div class="plant-info">
+                                <span class="icon">💧</span>
+                                <span>{plant.get("watering", "Unknown")}</span>
+                            </div>
+                            <div class="plant-info">
+                                <span class="icon">☀️</span>
+                                <span>{', '.join(plant.get("sunlight", []))}</span>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
         else:
@@ -214,12 +365,23 @@ with tab2:
                             image_url = plant["default_image"]["regular_url"]
                             
                         st.markdown(f"""
-                        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 10px; border: 1px solid #4ade80;">
-                            <h2>{plant.get("common_name")}</h2>
-                            <img src="{image_url}" style="width: 100%; max-width: 400px; border-radius: 10px;">
-                            <p><strong>Scientific Name:</strong> {plant.get("scientific_name", [""])[0]}</p>
-                            <p><strong>Watering:</strong> {plant.get("watering")}</p>
-                            <p><strong>Sunlight:</strong> {', '.join(plant.get("sunlight", []))}</p>
+                        <div class="plant-card">
+                            <h2 style="color: #15803d; font-weight: 700; margin-bottom: 1rem;">{plant.get("common_name")}</h2>
+                            <img src="{image_url}" style="height: 300px;">
+                            <span class="scientific" style="font-size: 1.1rem; margin-bottom: 1.5rem;">{plant.get("scientific_name", [""])[0]}</span>
+                            
+                            <div style="background: #f0fdf4; padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                                <div class="plant-info" style="font-size: 1rem; margin-bottom: 0.8rem;">
+                                    <span class="icon" style="font-size: 1.2rem;">💧</span>
+                                    <strong style="color: #0f172a; margin-left: 0.5rem;">Watering:</strong>
+                                    <span style="margin-left: auto;">{plant.get("watering")}</span>
+                                </div>
+                                <div class="plant-info" style="font-size: 1rem;">
+                                    <span class="icon" style="font-size: 1.2rem;">☀️</span>
+                                    <strong style="color: #0f172a; margin-left: 0.5rem;">Sunlight:</strong>
+                                    <span style="margin-left: auto;">{', '.join(plant.get("sunlight", []))}</span>
+                                </div>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
                     else:
