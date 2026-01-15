@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import time
+import base64
+from groq import Groq
 
 # Page configuration
 st.set_page_config(
@@ -9,9 +11,18 @@ st.set_page_config(
     layout="wide"
 )
 
-# Constants
-API_KEY = "sk-hpWB6968847d02ab614344"
-API_BASE_URL = "https://perenual.com/api"
+# Constants - Keys should be in .streamlit/secrets.toml or Streamlit Cloud Secrets
+try:
+    PERENUAL_API_KEY = st.secrets["PERENUAL_API_KEY"]
+except:
+    PERENUAL_API_KEY = "sk-hpWB6968847d02ab614344" # Fallback/Demo Key
+
+try:
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+except:
+    GROQ_API_KEY = "" # Placeholder - Needs to be set in secrets
+
+PERENUAL_BASE_URL = "https://perenual.com/api"
 
 def search_plants(query):
     """Search for plants using the Perenual API"""
@@ -19,9 +30,9 @@ def search_plants(query):
         return []
         
     try:
-        url = f"{API_BASE_URL}/species-list"
+        url = f"{PERENUAL_BASE_URL}/species-list"
         params = {
-            "key": API_KEY,
+            "key": PERENUAL_API_KEY,
             "q": query,
             "page": 1,
             "per_page": 12
@@ -35,6 +46,48 @@ def search_plants(query):
     except Exception as e:
         st.error(f"Error fetching data: {e}")
         return []
+
+def identify_plant_with_groq(image_bytes):
+    """Identify plant from image using Groq Vision model"""
+    if not GROQ_API_KEY:
+        st.error("Groq API Key is missing! Please configure it in Streamlit Secrets.")
+        return None
+        
+    try:
+        # Initialize Groq client
+        client = Groq(api_key=GROQ_API_KEY)
+        
+        # Encode image to base64
+        encoded_image = base64.b64encode(image_bytes).decode('utf-8')
+        
+        # Call Vision Model
+        completion = client.chat.completions.create(
+            model="llama-3.2-11b-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "Identify this plant. Return ONLY the common name of the plant. Do not include sentences, just the name."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{encoded_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            temperature=0.1,
+            max_tokens=50
+        )
+        
+        return completion.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"Vision API Error: {e}")
+        return None
 
 # Custom CSS
 st.markdown("""
@@ -135,47 +188,45 @@ with tab2:
         st.divider()
         
         if st.button("🔍 Identify Plant"):
-            with st.spinner("Analyzing image features..."):
-                time.sleep(2) # Simulate processing time
+            with st.spinner("Analyzing image with AI..."):
+                # Get bytes from the upload/camera buffer
+                image_bytes = image_file.getvalue()
                 
-                # NOTE: Real image identification requires a generic Vision API (like Gemini/OpenAI) 
-                # or a specific Plant ID API. The basic Perenual key is for DB search.
-                # For this demo, we simulate a successful identification.
+                # Real identification call using Groq
+                identified_name = identify_plant_with_groq(image_bytes)
                 
-                st.success("Analysis Complete!")
-                st.balloons()
-                
-                # Simulated result
-                simulated_match = "Sunflower"
-                confidence = "98.5%"
-                
-                st.markdown(f"""
-                ### 🎯 Match Found: **{simulated_match}**
-                **Confidence:** {confidence}
-                
-                *Note: This is a simulated result for demonstration. Connect a Vision API for real-time analysis.*
-                """)
-                
-                # Fetch details for the "identified" plant
-                details = search_plants(simulated_match)
-                if details:
-                    plant = details[0]
-                    st.json(plant, expanded=False)
+                if identified_name:
+                    st.success("Analysis Complete!")
+                    st.balloons()
                     
-                    image_url = "https://images.unsplash.com/photo-1416879895648-5d6776113f03?w=800"
-                    if plant.get("default_image") and plant.get("default_image").get("regular_url"):
-                        image_url = plant["default_image"]["regular_url"]
+                    st.markdown(f"### 🎯 Match Found: **{identified_name}**")
+                    
+                    # Search for specific details in the Perenual Database using the identified name
+                    with st.spinner(f"Fetching details for {identified_name}..."):
+                        details = search_plants(identified_name)
+                    
+                    if details:
+                        # Try to find an exact match if possible, otherwise take the first
+                        plant = details[0]
                         
-                    st.markdown(f"""
-                    <div style="background-color: #f0fdf4; padding: 20px; border-radius: 10px; border: 1px solid #4ade80;">
-                        <h2>{plant.get("common_name")}</h2>
-                        <img src="{image_url}" style="width: 100%; max-width: 400px; border-radius: 10px;">
-                        <p><strong>Scientific Name:</strong> {plant.get("scientific_name", [""])[0]}</p>
-                        <p><strong>Watering:</strong> {plant.get("watering")}</p>
-                        <p><strong>Sunlight:</strong> {', '.join(plant.get("sunlight", []))}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        image_url = "https://images.unsplash.com/photo-1416879895648-5d6776113f03?w=800"
+                        if plant.get("default_image") and plant.get("default_image").get("regular_url"):
+                            image_url = plant["default_image"]["regular_url"]
+                            
+                        st.markdown(f"""
+                        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 10px; border: 1px solid #4ade80;">
+                            <h2>{plant.get("common_name")}</h2>
+                            <img src="{image_url}" style="width: 100%; max-width: 400px; border-radius: 10px;">
+                            <p><strong>Scientific Name:</strong> {plant.get("scientific_name", [""])[0]}</p>
+                            <p><strong>Watering:</strong> {plant.get("watering")}</p>
+                            <p><strong>Sunlight:</strong> {', '.join(plant.get("sunlight", []))}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info(f"AI identified this as **{identified_name}**, but no detailed care info was found in our database.")
+                # Error handled inside identify function
+                
 
 # Footer
 st.markdown("---")
-st.markdown("<center style='color:#888'>Built with Streamlit & Perenual API</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:#888'>Built with Streamlit, Perenual API & Groq Vision AI</center>", unsafe_allow_html=True)
